@@ -1,51 +1,31 @@
 using Microsoft.AspNetCore.Mvc;
+using TmsApi.Services;
 
-namespace TmsApi.Controllers;
-
-[ApiController]
-[Route("api/enrollments")]
-public class EnrollmentsController : ControllerBase
+namespace TmsApi.Controllers
 {
-    private readonly IEnrollmentService _enrollmentService;
-
-    public EnrollmentsController(IEnrollmentService enrollmentService)
+    [ApiController]
+    [Route("api/[controller]")]
+    public class EnrollmentController : ControllerBase
     {
-        _enrollmentService = enrollmentService;
-    }
+        private readonly IEnrollmentService _service;
 
-    // GET /api/enrollments → returns all enrollment records
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
-    {
-        var enrollments = await _enrollmentService.GetAllAsync();
-        return Ok(enrollments);
-    }
+        public EnrollmentController(IEnrollmentService service)
+        {
+            _service = service;
+        }
 
-    // GET /api/enrollments/{id} → returns one or 404
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(string id)
-    {
-        var record = await _enrollmentService.GetByIdAsync(id);
-        return record is not null ? Ok(record) : NotFound();
-    }
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            var enrollments = await _service.GetAllAsync();
+            return Ok(enrollments);
+        }
 
-    // POST /api/enrollments → creates and returns 201 with Location header
-    [HttpPost]
-    public async Task<IActionResult> Create([FromBody] CreateEnrollmentRequest request)
-    {
-        var record = await _enrollmentService.EnrollAsync(request.StudentId, request.CourseCode);
-        return CreatedAtAction(nameof(GetById), new { id = record.Id }, record);
+        [HttpPost]
+        public async Task<IActionResult> Add(string studentName, string courseName)
+        {
+            await _service.AddEnrollmentAsync(studentName, courseName);
+            return Ok("Enrollment added successfully.");
+        }
     }
-
-    // DELETE /api/enrollments/{id} → returns 204 or 404
-[HttpDelete("{id}")]
-public async Task<IActionResult> Delete(string id)
-{
-    var deleted = await _enrollmentService.DeleteAsync(id);
-    return deleted ? NoContent() : NotFound();
 }
-
-}
-
-// Request model
-public record CreateEnrollmentRequest(string StudentId, string CourseCode);

@@ -1,20 +1,26 @@
 using Microsoft.AspNetCore.Authentication;
-using TmsApi.Workers;
 using Scalar.AspNetCore;
+using TmsApi.Middleware;
+using TmsApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Services
+// 🔹 Register services
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 
-// v2.16.2 setup
+// Swagger + Scalar UI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddSingleton<EnrollmentWorker>();
-builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
+// Business services
+builder.Services.AddSingleton<ICourseService, CourseService>();
+builder.Services.AddSingleton<IEnrollmentService, EnrollmentService>();
 
+//builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
+//builder.Services.AddScoped<ICourseService, CourseService>();
+
+// 🔹 Authentication & Authorization
 builder.Services
     .AddAuthentication("Training")
     .AddScheme<AuthenticationSchemeOptions, TrainingAuthHandler>("Training", null);
@@ -23,6 +29,7 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+// 🔹 Development vs Production setup
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -34,6 +41,7 @@ else
     app.UseExceptionHandler();
 }
 
+// 🔹 Middleware pipeline
 app.UseHttpsRedirection();
 app.UseRouting();
 app.UseAuthentication();
@@ -41,6 +49,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// 🔹 Test endpoint for error handling
 app.MapGet("/api/error", () =>
 {
     throw new InvalidOperationException("Simulated failure");
